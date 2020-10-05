@@ -3,8 +3,11 @@ use std::io::Read;
 use chip8::Chip8;
 
 mod chip8;
-mod ram;
+mod bus;
 mod cpu;
+mod display;
+mod keyboard;
+mod ram;
 
 fn main() {
     let mut file = File::open("roms/INVADERS").unwrap();
