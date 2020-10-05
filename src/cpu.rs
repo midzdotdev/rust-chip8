@@ -85,7 +85,7 @@ impl Cpu {
         if vx == vy {
           next_pc = self.pc + 4;
         }
-      }
+      },
 
       // 6xkk: Vx = kk
       0x6 => self.write_reg(x, kk),
@@ -126,7 +126,7 @@ impl Cpu {
 
           _ => panic!(),
         }
-      }
+      },
 
       // Annn: I = nnn
       0xA => self.i = nnn,
@@ -155,7 +155,7 @@ impl Cpu {
 
           _ => opcode_panic(),
         }
-      }
+      },
 
       0xF => {
         match kk {
