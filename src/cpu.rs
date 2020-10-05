@@ -57,7 +57,7 @@ impl Cpu {
           0x00EE => next_pc = self.ret_stack.pop().unwrap(),
 
           // 0nnn: Jump to routine at nnn
-          _ => panic!("0x0nnn should not be used.")
+          _ => panic!("Instruction 0nnn should not be used.")
         }
       },
 
@@ -158,12 +158,25 @@ impl Cpu {
       },
 
       0xF => {
+        let vx = self.read_reg(x);
+        
         match kk {
+          // Fx07: Vx = delay timer
+          0x07 => self.write_reg(x, bus.get_delay_timer()),
+
+          // Fx15: delay timer = Vx
+          0x15 => bus.set_delay_timer(vx),
+
           // Fx1E: I = I + Vx
-          0x1E => {
-            let vx = self.read_reg(x) as u16;
-            self.i = self.i.wrapping_add(vx);
-          },
+          0x1E => self.i = self.i.wrapping_add(vx as u16),
+
+          // Fx65: Fill V0..Vx with values from memory starting at I
+          0x65 => {
+            for index in 0..x+1 {
+              let value = bus.ram_read_byte(self.i + index as u16);
+              self.write_reg(index, value);
+            }
+          }
 
           _ => opcode_panic(),
         }
@@ -198,7 +211,7 @@ impl Cpu {
       let byte = bus.ram_read_byte(address);
       let pos_y = y + line;
       
-      let flipped = bus.debug_draw_byte(byte, x, pos_y);
+      let flipped = bus.display_draw_byte(byte, x, pos_y);
 
       if flipped {
         vf_value = 1;

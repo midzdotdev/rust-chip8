@@ -20,13 +20,13 @@ impl Display {
     }
   }
 
-  pub fn paint(&mut self) {
+  pub fn paint(&self) {
     for y in 0..HEIGHT {
       for x in 0..WIDTH {
         if self.screen[y][x] {
-          print!(" ");
-        } else {
           print!("#");
+        } else {
+          print!("_");
         }
       }
       print!("\n");
@@ -35,7 +35,7 @@ impl Display {
     println!("\n")
   }
 
-  pub fn debug_draw_byte(&mut self, byte: u8, x: u8, y: u8) -> bool {
+  pub fn draw_byte(&mut self, byte: u8, x: u8, y: u8) -> bool {
     let mut flipped = false;
     let mut b = byte;
 
@@ -50,19 +50,15 @@ impl Display {
           }
 
           self.screen[pixel_y][pixel_x] = false;
-          print!(" ");
         },
         1 => {
           self.screen[pixel_y][pixel_x] = true;
-          print!("#");
         },
         _ => unreachable!(),
       }
 
       b = b << 1;
     }
-
-    print!("\n");
 
     return flipped
   }

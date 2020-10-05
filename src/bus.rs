@@ -6,6 +6,7 @@ pub struct Bus {
   display: Display,
   keyboard: Keyboard,
   ram: Ram,
+  delay_timer: u8,
 }
 
 impl Bus {
@@ -14,6 +15,7 @@ impl Bus {
       display: Display::new(),
       keyboard: Keyboard::new(),
       ram: Ram::new(),
+      delay_timer: 0,
     }
   }
 
@@ -21,8 +23,12 @@ impl Bus {
     self.display.clear();
   }
 
-  pub fn debug_draw_byte(&mut self, byte: u8, x: u8, y: u8) -> bool {
-    return self.display.debug_draw_byte(byte, x, y);
+  pub fn display_present(&self) {
+    self.display.paint();
+  }
+
+  pub fn display_draw_byte(&mut self, byte: u8, x: u8, y: u8) -> bool {
+    return self.display.draw_byte(byte, x, y);
   }
 
   pub fn ram_read_byte (&self, address: u16) -> u8 {
@@ -35,5 +41,19 @@ impl Bus {
 
   pub fn key_pressed(&self, key_code: u8) -> bool {
     return self.keyboard.key_pressed(key_code);
+  }
+
+  pub fn set_delay_timer(&mut self, value: u8) {
+    self.delay_timer = value;
+  }
+
+  pub fn tick(&mut self) {
+    if self.delay_timer > 0 {
+      self.delay_timer -= 1;
+    }
+  }
+
+  pub fn get_delay_timer(&self) -> u8 {
+    return self.delay_timer;
   }
 }
