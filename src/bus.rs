@@ -35,8 +35,16 @@ impl Bus {
     self.ram.write_byte(address, value);
   }
 
-  pub fn key_pressed(&self, key_code: u8) -> bool {
-    return self.keyboard.key_pressed(key_code);
+  pub fn is_key_pressed(&self, key_code: u8) -> bool {
+    return self.keyboard.is_key_pressed(key_code);
+  }
+
+  pub fn get_key_pressed(&self) -> Option<u8> {
+    return self.keyboard.get_key_pressed();
+  }
+
+  pub fn set_key_pressed(&mut self, key: Option<u8>) {
+    self.keyboard.set_key_pressed(key);
   }
 
   pub fn set_delay_timer(&mut self, value: u8) {

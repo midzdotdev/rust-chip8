@@ -31,4 +31,8 @@ impl Chip8 {
   pub fn get_display_buffer(&self) -> &[u8] {
     return self.bus.get_display_buffer();
   }
+
+  pub fn set_key_pressed(&mut self, key: Option<u8>) {
+    self.bus.set_key_pressed(key);
+  }
 }

@@ -1,5 +1,5 @@
-const WIDTH: usize = 64;
-const HEIGHT: usize = 32;
+pub const WIDTH: usize = 64;
+pub const HEIGHT: usize = 32;
 
 pub struct Display {
   screen: [u8; HEIGHT * WIDTH],

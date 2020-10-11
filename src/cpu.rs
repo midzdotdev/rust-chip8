@@ -51,7 +51,7 @@ impl Cpu {
           0x00EE => next_pc = self.ret_stack.pop().unwrap(),
 
           // 0nnn: Jump to routine at nnn
-          _ => panic!("Instruction 0nnn should not be used.")
+          _ => opcode_panic()
         }
       },
 
@@ -60,7 +60,7 @@ impl Cpu {
 
       // 2nnn: Call subroutine at nnn
       0x2 => {
-        self.ret_stack.push(self.pc);
+        self.ret_stack.push(self.pc + 2);
         next_pc = nnn;
       },
 
@@ -107,19 +107,19 @@ impl Cpu {
 
         match n {
           // 8xy0: Vx = Vy
-          0 => self.write_reg(x, vy),
+          0x0 => self.write_reg(x, vy),
 
           // 8xy1: Vx = Vx OR Vy
-          1 => self.write_reg(x, vx | vy),
+          0x1 => self.write_reg(x, vx | vy),
 
           // 8xy2: Vx = Vx AND Vy
-          2 => self.write_reg(x, vx & vy),
+          0x2 => self.write_reg(x, vx & vy),
 
           // 8xy3: Vx = Vx XOR Vy
-          3 => self.write_reg(x, vx ^ vy),
+          0x3 => self.write_reg(x, vx ^ vy),
 
           // 8xy4: Vx = Vx + Vy, VF = carry
-          4 => {
+          0x4 => {
             let result: u16 = vx as u16 + vy as u16;
             self.write_reg(x, result as u8);
 
@@ -128,14 +128,63 @@ impl Cpu {
             }
           },
 
-          // CHECKED UP TO 8xy5
+          // 8xy5: Vx = Vx - Vy; VF = NOT borrow
+          0x5 => {
+            let vf = if vx > vy { 1 } else { 0 };
+            self.write_reg(0xF, vf);
+
+            self.write_reg(x, vx - vy);
+          },
+
+          // 8xy6: Vx = Vx SHR 1
+          0x6 => {
+            let vf = if vx & 0x1 == 0x1 { 1 } else { 0 };
+            self.write_reg(0xF, vf);
+
+            self.write_reg(x, vx >> 2);
+          }
+
+          // 8xy7: Vx = Vy - Vx; VF = NOT borrow
+          0x7 => {
+            let vf = if vy > vx { 1 } else { 0 };
+            self.write_reg(0xF, vf);
+
+            self.write_reg(x, vy - vx);
+          },
+
+          // 8xyE: Vx = Vx SHL 1
+          0xE => {
+            let vf = (vx & 0x80) >> 7;
+            self.write_reg(0xF, vf);
+
+            self.write_reg(x, vx << 1);
+          }
 
           _ => panic!(),
         }
       },
 
+      // 9xy0: Skip next instruction if Vx != Vy
+      0x9 => {
+        let vx = self.read_reg(x);
+        let vy = self.read_reg(y);
+
+        if vx != vy {
+          next_pc = self.pc + 4;
+        }
+      },
+
       // Annn: I = nnn
       0xA => self.i = nnn,
+
+      // Bnnn: Jump to address nnn + V0
+      0xB => next_pc = nnn + self.read_reg(0x0) as u16,
+
+      // Cxkk: Vx = rnd() AND kk
+      0xC => {
+        let rnd: u8 = rand::random();
+        self.write_reg(x, rnd & kk);
+      },
 
       // Dxyn: Display sprite n-byte sprite at address I at (Vx, Vy), set VF = collision
       0xD => {
@@ -147,7 +196,7 @@ impl Cpu {
 
       0xE => {
         let key_code = self.read_reg(x);
-        let is_key_pressed = bus.key_pressed(key_code);
+        let is_key_pressed = bus.is_key_pressed(key_code);
 
         match kk {
           // Ex9E: Skip next instruction if key Vx is pressed
@@ -175,11 +224,42 @@ impl Cpu {
           // Fx07: Vx = delay timer
           0x07 => self.write_reg(x, bus.get_delay_timer()),
 
+          // Fx0A: Pause until key press, store code in Vx
+          0x0A => {
+            if let Some(val) = bus.get_key_pressed() {
+              self.write_reg(x, val);
+            }
+          }
+
           // Fx15: delay timer = Vx
           0x15 => bus.set_delay_timer(vx),
 
+          // Fx18: sound timer = Vx
+          0x18 => {
+            // TODO: implement sound timer
+          },
+
           // Fx1E: I = I + Vx
-          0x1E => self.i = self.i.wrapping_add(vx as u16),
+          0x1E => self.i += vx as u16,
+
+          // Fx29: I = location of sprite for digit Vx
+          0x29 => self.i = vx as u16 * 5,
+
+          // Fx33: Store BCD of Vx in memory locations I, I+1, I+2
+          0x33 => {
+            bus.ram_write_byte(self.i, vx / 100);
+            bus.ram_write_byte(self.i+1, (vx % 100) / 10);
+            bus.ram_write_byte(self.i+2, vx % 10);
+          },
+
+          // Fx55: Store registers V0..Vx in memory starting at I
+          0x55 => {
+            for index in 0..x+1 {
+              let value = self.read_reg(index);
+              bus.ram_write_byte(self.i + index as u16, value);
+            }
+            self.i += x as u16 + 1;
+          },
 
           // Fx65: Fill V0..Vx with values from memory starting at I
           0x65 => {
@@ -187,6 +267,8 @@ impl Cpu {
               let value = bus.ram_read_byte(self.i + index as u16);
               self.write_reg(index, value);
             }
+
+            self.i += x as u16 + 1;
           }
 
           _ => opcode_panic(),
@@ -194,10 +276,6 @@ impl Cpu {
       },
 
       _ => opcode_panic(),
-    }
-
-    if self.pc == next_pc {
-      panic!("Infinite loop: PC has not changed");
     }
 
     self.pc = next_pc;
