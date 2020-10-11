@@ -30,17 +30,11 @@ impl Cpu {
 
     let opcode: u16 = (hi << 8) | lo;
 
-    println!("Address: {:#X}, Opcode: {:#X}", address, opcode);
-
     let nnn = opcode & 0x0FFF;
     let kk = (opcode & 0x00FF) as u8;
     let n = (opcode & 0x000F) as u8;
     let x = ((opcode & 0x0F00) >> 8) as u8;
     let y = ((opcode & 0x00F0) >> 4) as u8;
-
-    println!("nnn: {:#X}, kk: {:?}, n: {:?}, x: {}, y: {}", nnn, kk, n, x, y);
-
-    self.debug_state();
 
     let mut next_pc = self.pc + 2;
 
@@ -207,17 +201,6 @@ impl Cpu {
     }
 
     self.pc = next_pc;
-  }
-
-  fn debug_state(&mut self) {
-    for i in 0..16 {
-      print!("V{:X?}: {:X?} ", i, self.read_reg(i));
-    }
-
-    print!("\n");
-    print!("I: {} ", self.i);
-    print!("PC: {}", self.pc);
-    println!("\n");
   }
 
   fn draw_sprite(&mut self, bus: &mut Bus, x: u8, y: u8, height: u8) {
