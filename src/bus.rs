@@ -23,10 +23,6 @@ impl Bus {
     self.display.clear();
   }
 
-  pub fn display_present(&self) {
-    self.display.paint();
-  }
-
   pub fn display_draw_byte(&mut self, byte: u8, x: u8, y: u8) -> bool {
     return self.display.draw_byte(byte, x, y);
   }
@@ -55,5 +51,9 @@ impl Bus {
 
   pub fn get_delay_timer(&self) -> u8 {
     return self.delay_timer;
+  }
+
+  pub fn get_display_buffer(&self) -> &[u8] {
+    return self.display.get_display_buffer();
   }
 }

@@ -70,9 +70,18 @@ impl Cpu {
         next_pc = nnn;
       },
 
-      // 3xkk: Skip next instruction if Vx != kk
+      // 3xkk: Skip next instruction if Vx == kk
       0x3 => {
-        if self.read_reg(x) != kk {
+        let vx = self.read_reg(x);
+        if vx == kk {
+          next_pc = self.pc + 4;
+        }
+      },
+
+      // 4xkk: Skip next instruction if Vx != kk
+      0x4 => {
+        let vx = self.read_reg(x);
+        if vx != kk {
           next_pc = self.pc + 4;
         }
       },
@@ -94,6 +103,7 @@ impl Cpu {
       0x7 => {
         let vx = self.read_reg(x);
         let result = vx.wrapping_add(kk);
+
         self.write_reg(x, result);
       },
 
@@ -124,6 +134,8 @@ impl Cpu {
             }
           },
 
+          // CHECKED UP TO 8xy5
+
           _ => panic!(),
         }
       },
@@ -132,7 +144,12 @@ impl Cpu {
       0xA => self.i = nnn,
 
       // Dxyn: Display sprite n-byte sprite at address I at (Vx, Vy), set VF = collision
-      0xD => self.debug_draw_sprite(bus, x, y, n),
+      0xD => {
+        let vx = self.read_reg(x);
+        let vy = self.read_reg(y);
+
+        self.draw_sprite(bus, vx, vy, n);
+      },
 
       0xE => {
         let key_code = self.read_reg(x);
@@ -203,7 +220,7 @@ impl Cpu {
     println!("\n");
   }
 
-  fn debug_draw_sprite(&mut self, bus: &mut Bus, x: u8, y: u8, height: u8) {
+  fn draw_sprite(&mut self, bus: &mut Bus, x: u8, y: u8, height: u8) {
     let mut vf_value = 0;
 
     for line in 0..height {

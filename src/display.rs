@@ -2,64 +2,54 @@ const WIDTH: usize = 64;
 const HEIGHT: usize = 32;
 
 pub struct Display {
-  screen: [[bool; WIDTH]; HEIGHT],
+  screen: [u8; HEIGHT * WIDTH],
 }
 
 impl Display {
   pub fn new() -> Display {
     Display {
-      screen: [[false; WIDTH]; HEIGHT],
+      screen: [0; HEIGHT * WIDTH],
     }
   }
 
-  pub fn clear(&mut self) {
-    for pixel_y in 0..HEIGHT {
-      for pixel_x in 0..WIDTH {
-        self.screen[pixel_y][pixel_x] = false;
-      }
-    }
-  }
-
-  pub fn paint(&self) {
-    for y in 0..HEIGHT {
-      for x in 0..WIDTH {
-        if self.screen[y][x] {
-          print!("#");
-        } else {
-          print!("_");
-        }
-      }
-      print!("\n");
-    }
-
-    println!("\n")
+  pub fn get_index_from_coords(x: usize, y: usize) -> usize {
+    return (y * WIDTH) + x
   }
 
   pub fn draw_byte(&mut self, byte: u8, x: u8, y: u8) -> bool {
-    let mut flipped = false;
+    let mut erased = false;
+    let mut coord_x = x as usize;
+    let mut coord_y = y as usize;
     let mut b = byte;
 
-    for i in 0..8 {
-      let pixel_x = (x + i) as usize;
-      let pixel_y = y as usize;
+    for _ in 0..8 {
+      coord_x %= WIDTH;
+      coord_y %= HEIGHT;
+      
+      let index = Display::get_index_from_coords(coord_x, coord_y);
+      let bit = (b & 0b1000_0000) >> 7;
+      let prev_value = self.screen[index];
 
-      match (b & 0b1000_0000) >> 7 {
-        0 => {
-          if self.screen[pixel_y][pixel_x] == true {
-            flipped = true;
-          }
+      self.screen[index] ^= bit;
 
-          self.screen[pixel_y][pixel_x] = false;
-        },
-        1 => {
-          self.screen[pixel_y][pixel_x] = true;
-        },
-        _ => unreachable!(),
+      if prev_value == 1 && self.screen[index] == 0 {
+        erased = true;
       }
 
-      b = b << 1;
+      coord_x += 1;
+      b <<= 1;
     }
 
-    return flipped
+    return erased
+  }
+
+  pub fn clear(&mut self) {
+    for pixel in &mut self.screen.iter_mut() {
+      *pixel = 0;
+    }
+  }
+
+  pub fn get_display_buffer(&self) -> &[u8] {
+    return &self.screen;
   }
 }

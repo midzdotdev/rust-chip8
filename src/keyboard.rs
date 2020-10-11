@@ -9,6 +9,6 @@ impl Keyboard {
 
   pub fn key_pressed(&self, key_code: u8) -> bool {
     // TODO: Implement proper key handling
-    return true
+    return false
   }
 }
