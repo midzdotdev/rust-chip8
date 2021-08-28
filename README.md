@@ -1,4 +1,5 @@
-![CHIP-8](http://f.cl.ly/items/2U2t3t1o2v361g001H1F/c8-logo.png)
+![CHIP-8 Image](https://user-images.githubusercontent.com/14968094/131220678-acbbd725-6b71-4bc1-aa6b-591d01e04d36.png)
+
 
 # CHIP-8 Emulator in Rust
 
